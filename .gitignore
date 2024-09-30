@@ -1,0 +1,14 @@
+**/.idea/
+**/.vscode/
+
+.settings/
+.classpath
+.project
+
+**/.DS_Store
+
+**/build/
+**/target/
+
+**/obj/
+**/bin/
