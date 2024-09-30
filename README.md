@@ -1,6 +1,6 @@
 # Caster: a 2D Graphic Engine
 
-## Current objective
+## Current objectives
 
 The first implementation of the project will allow the user to render and utilize simple models.
 
