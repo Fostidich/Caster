@@ -1,6 +1,8 @@
 package it.fostidich.caster.model;
 
-public class Tile {
+import java.io.Serializable;
+
+public class Tile implements Serializable {
 
     private String texture;
     private String icon;

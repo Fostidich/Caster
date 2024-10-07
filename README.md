@@ -3,6 +3,7 @@
 ## Current objectives
 
 The first implementation of the project will allow the user to render and utilize simple models.
+Player will be able to move and have some little interaction with map point of interest.
 
 - Display a grid map
     - Each cell is assigned a tile texture
@@ -27,6 +28,8 @@ The first implementation of the project will allow the user to render and utiliz
 - Other entities can be displayed along the player
 
 ##### TODO
-- [ ] Design UML
+- [x] Design initial UML
+- [ ] Create and serialize a world map example
+- [ ] Implement rendering (JavaFX ?)
 
 ###### Java code written by Francesco Ostidich

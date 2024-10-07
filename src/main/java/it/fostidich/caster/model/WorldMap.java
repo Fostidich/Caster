@@ -1,14 +1,16 @@
 package it.fostidich.caster.model;
 
-import java.util.Map;
+import java.io.Serializable;
 
-public class WorldMap {
+public class WorldMap implements Serializable {
 
     private int width;
-    private int height;
-    private Map<Coordinates, Tile> world;
 
-    public WorldMap(String path) {}
+    private int height;
+
+    private Tile[][] world;
+
+    public WorldMap() {}
 
     public int getWidth() {
         return width;
@@ -18,7 +20,11 @@ public class WorldMap {
         return height;
     }
 
-    public Map<Coordinates, Tile> getWorld() {
-        return world;
+    public Tile getTile(int x, int y) {
+        return world[x][y];
+    }
+
+    private void setTile(int x, int y, Tile tile) {
+        world[x][y] = tile;
     }
 }
