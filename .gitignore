@@ -1,14 +1,13 @@
-**/.idea/
-**/.vscode/
-
+.idea/
+.vscode/
+.gradle/
 .settings/
 .classpath
 .project
 
 **/.DS_Store
 
-**/build/
-**/target/
-
+build/
+target/
 **/obj/
 **/bin/

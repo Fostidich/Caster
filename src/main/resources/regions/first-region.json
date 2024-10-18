@@ -1,0 +1,34 @@
+[
+    {
+        "coordinates": [0, 0],
+        "tile": {
+            "texture": "grass",
+            "icon": "none",
+            "action-tags": []
+        }
+    },
+    {
+        "coordinates": [0, 1],
+        "tile": {
+            "texture": "grass",
+            "icon": "chest",
+            "action-tags": ["clickable-side", "obstacle"]
+        }
+    },
+    {
+        "coordinates": [1, 0],
+        "tile": {
+            "texture": "grass",
+            "icon": "none",
+            "action-tags": []
+        }
+    },
+    {
+        "coordinates": [1, 1],
+        "tile": {
+            "texture": "rock",
+            "icon": "none",
+            "action-tags": ["obstacle"]
+        }
+    }
+]
