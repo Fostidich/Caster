@@ -30,6 +30,7 @@ Player will be able to move and have some little interaction with map point of i
 ##### TODO
 - [x] Design initial UML
 - [ ] Create and serialize a world map example
-- [ ] Implement rendering (JavaFX ?)
+- [ ] Implement rendering with JavaFX
 
 ###### Java code written by Francesco Ostidich
+
