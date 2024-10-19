@@ -1,35 +1,36 @@
 package it.fostidich.caster;
 
-import com.google.gson.Gson;
-
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.util.Objects;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
+import static it.fostidich.caster.Errors.NonNegativeValue;
+import static it.fostidich.caster.Errors.UndefinedVariable;
+import static it.fostidich.caster.Resources.*;
+
 public class Region extends Application {
 
+    public static int sideFraction = 6;
+    public static int minWindowSide = 400;
     public static String firstRegion;
     public static String firstPlayer;
+
     private ImageView[][] regionView;
     private ImageView playerView;
-
+    private int windowHeight = 1080;
+    private int windowWidth = 1920;
     private double imageX = 0;
     private double imageY = 0;
-    private double step = 32;
+    private int step = 32;
 
     public static void run() {
         launch();
@@ -37,41 +38,23 @@ public class Region extends Application {
 
     @Override
     public void init() {
-        // TODO resources folder are to be made editable constant
-        // TODO clean up variable presence checks with a new function
-        // Check that the first region has been previously defined
-        if (firstRegion.isEmpty()) {
-            System.err.println("First region has not been defined: " + firstRegion);
-            System.exit(1);
-        }
+        // Initial check assertions
+        NonNegativeValue.abort(sideFraction < 0, "sideFraction set to " + sideFraction);
+        NonNegativeValue.abort(minWindowSide < 0, "minWindowSide set to " + minWindowSide);
+        UndefinedVariable.abort(firstRegion.isEmpty(), "firstRegion is empty");
+        UndefinedVariable.abort(firstPlayer.isEmpty(), "firstPlayer is empty");
 
-        // Check that the first player has been previously defined
-        if (firstPlayer.isEmpty()) {
-            System.err.println("First player has not been defined: " + firstPlayer);
-            System.exit(1);
-        }
-
-        // TODO clean up json reading with a new function
         // Retrieve the tiles string descriptors from json file
-        String[][] tileDescriptors = null;
-        try (Reader reader = new InputStreamReader(
-                Objects.requireNonNull(
-                        Main.class.getResourceAsStream("/regions/" + firstRegion + ".json")))) {
-            Gson gson = new Gson();
-            tileDescriptors = gson.fromJson(reader, String[][].class);
-        } catch (Exception ignored) {
-            System.err.println("Error while opening region file: " + firstRegion);
-            System.exit(1);
-        }
+        String[][] tileDescriptors = Json.fromJsonFile(String[][].class, "/regions/" + firstRegion + ".json");
 
-        // Get image view for the tiles
+        // Get an image view for each tile
         regionView = new ImageView[tileDescriptors.length][tileDescriptors[0].length];
         for (int y = 0; y < tileDescriptors.length; y++)
             for (int x = 0; x < tileDescriptors[0].length; x++)
-                regionView[x][y] = getImageView("/tiles/" + tileDescriptors[x][y] + ".png");
+                regionView[x][y] = getTileResource(tileDescriptors[x][y]);
 
         // Get image view for the player
-        playerView = getImageView("/players/" + firstPlayer + ".png");
+        playerView = getPlayerResource(firstPlayer);
     }
 
     @Override
@@ -95,59 +78,24 @@ public class Region extends Application {
         stackPane.requestFocus();
 
         // Create scene and set window size and set cell size
-        Scene scene = new Scene(stackPane, 1920, 1080);
-        resizeImages(scene);
+        Scene scene = new Scene(stackPane, windowWidth, windowHeight);
+        resizeTiles();
 
         // Set up listeners for tile resizing
-        scene.widthProperty().addListener((obs, oldVal, newVal) -> resizeImages(scene));
-        scene.heightProperty().addListener((obs, oldVal, newVal) -> resizeImages(scene));
-
-        // Move with WASD keys
-        scene.setOnKeyPressed(event -> {
-            KeyCode code = event.getCode();
-
-            // Handle Ctrl+Q to quit the application
-            if (event.isControlDown() && event.getCode() == KeyCode.Q) {
-                System.out.println("Closing application window");
-                Platform.exit();
-                return;
-            }
-
-            // Update player position
-            Consumer<String> updatePosition = (key) -> {
-                System.out.println("Pressed key: " + key + " - " + "Pixel coordinates: (" + imageX + ", " + imageY + ")");
-                playerView.setTranslateX(imageX);
-                playerView.setTranslateY(imageY);
-            };
-
-            // Handle player movement
-            switch (code) {
-                case W:
-                    imageY -= step;
-                    updatePosition.accept("W");
-                    break;
-                case S:
-                    imageY += step;
-                    updatePosition.accept("S");
-                    break;
-                case A:
-                    imageX -= step;
-                    updatePosition.accept("A");
-                    break;
-                case D:
-                    imageX += step;
-                    updatePosition.accept("D");
-                    break;
-            }
+        scene.widthProperty().addListener((obs, oldVal, newVal) -> {
+            windowWidth = newVal.intValue();
+            resizeTiles();
+        });
+        scene.heightProperty().addListener((obs, oldVal, newVal) -> {
+            windowHeight = newVal.intValue();
+            resizeTiles();
         });
 
-        // TODO we need a way to access resources more efficiently
-        // TODO resources folder are to be made editable constant
+        // Manage key pressing actions
+        scene.setOnKeyPressed(this::keyPressHandler);
+
         // Provide css to scene
-        scene.getStylesheets().add(
-                Objects.requireNonNull(
-                                Main.class.getResource("/css/style.css"))
-                        .toExternalForm());
+        scene.getStylesheets().add(getCssResource("style"));
 
         // Spawn window
         stage.setTitle("Caster");
@@ -156,53 +104,70 @@ public class Region extends Application {
         stage.show();
     }
 
-    private void resizeImages(Scene scene) {
-        // TODO make this value constants and customizable
-        double widthFraction = 4;
-        double heightFraction = 4;
-        double minWidth = 32;
-        double minHeight = 32;
-        double maxWidth = 512;
-        double maxHeight = 512;
-
-        double windowWidth = scene.getWidth();
-        double windowHeight = scene.getHeight();
-        double imageWidth = windowWidth / widthFraction;
-        double imageHeight = windowHeight / heightFraction;
-
-        // Don't resize if limits are reached
-        if (imageWidth < minWidth || imageHeight < minHeight ||
-                imageWidth > maxWidth || imageHeight > maxHeight) return;
-
+    private void resizeTiles() {
         // Update step size
-        step = imageWidth * 2;
+        step = resizedTileSide();
 
         // Resize each tile image
         for (ImageView[] line : regionView) {
             for (ImageView tileView : line) {
-                tileView.setFitWidth(imageWidth);
-                tileView.setFitHeight(imageHeight);
+                tileView.setFitWidth(step);
                 tileView.setPreserveRatio(true);
             }
         }
 
         // Resize player icon
-        playerView.setFitWidth(imageWidth);
-        playerView.setFitHeight(imageHeight);
+        playerView.setFitWidth(step);
         playerView.setPreserveRatio(true);
     }
 
-    /**
-     * Build the ImageView object from the path of the image resource.
-     *
-     * @param path It is the full path of the image from the resources root folder
-     * @return The ImageView object
-     */
-    private ImageView getImageView(String path) {
-        // TODO manage file absence
-        Image image = new Image(
-                Objects.requireNonNull(
-                        Main.class.getResourceAsStream(path)));
-        return new ImageView(image);
+    private int resizedTileSide() {
+        // Measure new size based on limits
+        int tileSide;
+        if (windowHeight < minWindowSide || windowWidth < minWindowSide)
+            tileSide = minWindowSide / sideFraction;
+        else if (windowWidth < windowHeight)
+            tileSide = windowWidth / sideFraction;
+        else
+            tileSide = windowHeight / sideFraction;
+        return tileSide;
+    }
+
+    private void keyPressHandler(KeyEvent event) {
+        KeyCode code = event.getCode();
+
+        // Handle Ctrl+Q to quit the application
+        if (event.isControlDown() && event.getCode() == KeyCode.Q) {
+            System.out.println("Pressed keys: Ctrl+Q - Closing application window");
+            Platform.exit();
+            return;
+        }
+
+        // Update player position
+        Consumer<KeyCode> updatePosition = (key) -> {
+            System.out.println("Pressed key: " + key + " - " + "Pixel coordinates: (" + imageX + ", " + imageY + ")");
+            playerView.setTranslateX(imageX);
+            playerView.setTranslateY(imageY);
+        };
+
+        // Handle player movement due to WASD keys pressed
+        switch (code) {
+            case W:
+                imageY -= step;
+                updatePosition.accept(code);
+                break;
+            case S:
+                imageY += step;
+                updatePosition.accept(code);
+                break;
+            case A:
+                imageX -= step;
+                updatePosition.accept(code);
+                break;
+            case D:
+                imageX += step;
+                updatePosition.accept(code);
+                break;
+        }
     }
 }
