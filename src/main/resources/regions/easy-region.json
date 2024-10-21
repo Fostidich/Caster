@@ -1,5 +1,7 @@
 [
-    ["river", "grass", "grass"],
-    ["river", "grass", "grass"],
-    ["river", "rock", "rock"]
+    ["grass", "grass", "river", "grass", "grass", "grass"],
+    ["grass", "grass", "river", "grass", "grass", "grass"],
+    ["grass", "grass", "river", "rock", "rock", "grass"],
+    ["grass", "river", "river", "rock", "rock", "rock"],
+    ["grass", "river", "rock", "rock", "rock", "rock"]
 ]

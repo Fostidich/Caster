@@ -12,7 +12,7 @@ public class Json {
     public static <T> T fromJsonFile(Class<T> c, String resourcePath) {
         T result = null;
         try (Reader reader = new InputStreamReader(
-                Resources.getResource(resourcePath))) {
+                Resources.getResourceStream(resourcePath))) {
             Gson gson = new Gson();
             result = gson.fromJson(reader, c);
         } catch (IOException ignored) {
